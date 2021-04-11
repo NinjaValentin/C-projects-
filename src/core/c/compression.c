@@ -1,15 +1,13 @@
 #include "Header.h"
 #include "Errors.h"
 
-//Составление таблицы и подсчёт уникальных символов в кодируемом файле
-void CountSimbls(FILE *file, unsigned int *simTable) {
+void countSimbls(FILE *file, unsigned int *simTable) {
 	unsigned int ch;
 	while ((ch = fgetc(file)) < 256) {
 		simTable[ch]++;
 	}
 }
 
-//создание дерева
 sym *makeTree(sym *psym[], int k)
 {
 	sym *temp;
@@ -45,24 +43,21 @@ sym *makeTree(sym *psym[], int k)
 	return makeTree(psym, k - 1);
 }
 
-//основная функция для сжатия
 unsigned long long  compression(FILE *InFile, FILE *Arch) {
 	
 	caption inf;
 	sym *symbols = NULL;
 	SymTable Alf[256] = { 0 };
-	unsigned long long  charcount; //точное количество битов записанных в файл(если % 8 + 1 получим кол байт)
+	unsigned long long  charcount; 
 	int chh;
 	int i;
 	sym **psym = NULL; 
-	int counter = 0; //Количество уникальных символов в файле
+	int counter = 0;
 	unsigned int simTable[256] = {0};
-
-	//подсчёт уникальных символов 
-	CountSimbls(InFile, simTable);	
+ 
+	countSimbls(InFile, simTable);	
 	fwrite(simTable, sizeof(unsigned int), 256, Arch);	
 
-	//создание и заполнение динамического массива структур по количеству уникальных символов
 	for (int i = 0;i < 256; i++) {
 		if (simTable[i] != 0) {
 			if (!(counter % 8))
@@ -74,22 +69,17 @@ unsigned long long  compression(FILE *InFile, FILE *Arch) {
 			counter++;
 		}
 	}
-	
-	//сортировка по убыванию динамического массива структур
+
 	qsort(symbols, counter, sizeof(sym), comp);
-	
-	//определение массива указателей на структуры с данными о символах
+
 	psym = (sym**)malloc(counter * sizeof(sym*));
 	for (i = 0; i < counter; i++)
 		psym[i] = &symbols[i];
 
-	//создание дерева и обход его для построения кодов
 	sym *root = makeTree(psym, counter);	
 	makeCodes(root, counter);
 
 	
-	/*Определение неупорядоченного массива структур с символом и его кодом, для более быстрого кодирования.
-	В данном случае индекс массива это номер символа в таблице аски, массив не упорядочен*/
 	for (i = 0;i < counter;i++) {
 		int m, k;
 		m = (unsigned char)symbols[i].ch;
@@ -98,11 +88,8 @@ unsigned long long  compression(FILE *InFile, FILE *Arch) {
 		Alf[m].size = k;
 		strcpy(Alf[m].code, symbols[i].code);
 	}
-	
-	//Вывод промежуточной информации в консоль для отладки
 	//pr(symbols, counter);
 
-	//Запись битов в файл
 	rewind(InFile);
 	charcount = WriteBits(InFile, Alf, Arch);
 	
@@ -111,7 +98,6 @@ unsigned long long  compression(FILE *InFile, FILE *Arch) {
 	return charcount;
 }
 
-//создание кодов по дереву
 void makeCodes(sym *root, int num)
 {
 	if (root == NULL)
@@ -132,7 +118,6 @@ void makeCodes(sym *root, int num)
 	}
 }
 
-//запись битов в файл
 unsigned long long  WriteBits(FILE *InFile, SymTable *Alf, FILE *Arch) {
 	unsigned int  ch;
 	int position = 0;
@@ -158,18 +143,16 @@ unsigned long long  WriteBits(FILE *InFile, SymTable *Alf, FILE *Arch) {
 	return charcount;
 }
 
-//декодирование файла
 void decoding(FILE *OutFile, unsigned char *buf, unsigned int *simTable, unsigned long long  charcount) {
 
 	sym *symbols = NULL;
 	sym **psym = NULL;
-	int counter = 0; //Количество уникальных символов в файле
+	int counter = 0; 
 	int position = 0;
 	unsigned char byte = 0;
 	unsigned long long  size = 0;
 	int i = 0;
 
-	//создание и заполнение динамического массива структур по количеству уникальных символов
 	for (int i = 0;i < 256; i++) {
 		if (simTable[i] != 0) {
 			if (!(counter % 8))
@@ -182,15 +165,12 @@ void decoding(FILE *OutFile, unsigned char *buf, unsigned int *simTable, unsigne
 		}
 	}
 
-	//сортировка по убыванию динамического массива структур
 	qsort(symbols, counter, sizeof(sym), comp);
 
-	//определение массива указателей на структуры с данными о символах
 	psym = (sym**)malloc(counter * sizeof(sym*));
 	for (i = 0; i < counter; i++)
 		psym[i] = &symbols[i];
 
-	//создание дерева
 	sym *root = makeTree(psym, counter);
 	sym *tree = root;
 
