@@ -18,6 +18,7 @@ Install cmake and run:
 ```
 ./archiver <arg> <arch_name.eue> <file1> <file2>...
 ```
+All archives name extensions must be .eue; 
 
 ### Args 
 1. a - add files to archive
