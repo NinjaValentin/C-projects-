@@ -15,7 +15,9 @@ Install cmake and run:
 ```
 
 ## Usage
+```
 ./archiver <arg> <arch_name.eue> <file1> <file2>...
+```
 
 ### Args 
 1. a - add files to archive
